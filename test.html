@@ -1,1 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoBudget - Smart Receipt Scanner</title>
+    <style>
+        /* Base Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 2rem;
+            background: #2c3e50;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Upload Section */
+        .upload-card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .upload-btn {
+            background: #3498db;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        #imagePreview {
+            max-width: 300px;
+            margin: 1rem auto;
+            display: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Results Section */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+
+        .result-item {
+            margin: 1rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-tag {
+            background: #3498db;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* Loading State */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 1rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>AutoBudget 💸</h1>
+        <p>Smart Receipt Scanning & Expense Tracking</p>
+    </header>
+
+    <main class="container">
+        <section class="upload-card">
+            <input type="file" id="fileInput" accept="image/*" hidden>
+            <button class="upload-btn" id="uploadBtn">
+                📸 Upload Receipt
+            </button>
+            <img id="imagePreview" alt="Receipt preview">
+            <div class="loading" id="loading">Processing...</div>
+        </section>
+
+        <section class="dashboard">
+            <div class="card">
+                <h3>Transaction Details</h3>
+                <div id="transactionDetails">
+                    <div class="result-item">
+                        <span>Store:</span>
+                        <span id="storeName">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Amount:</span>
+                        <span id="transactionAmount">-</span>
+                    </div>
+                    <div class="result-item">
+                        <span>Category:</span>
+                        <span id="transactionCategory" class="category-tag">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Budget Overview</h3>
+                <div id="chartContainer">
+                    <p style="color: #666; text-align: center">
+                        Expense breakdown will appear here
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // OCR Processor
+        const Tesseract = window.Tesseract;
+        let isLoading = false;
+
+        // Elements
+        const uploadBtn = document.getElementById('uploadBtn');
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const loading = document.getElementById('loading');
+
+        // Event Listeners
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                toggleLoading(true);
+                const imageUrl = URL.createObjectURL(file);
+                showImagePreview(imageUrl);
+                
+                // OCR Processing
+                const { data: { text } } = await Tesseract.recognize(
+                    imageUrl,
+                    'eng',
+                    { logger: m => console.log(m) }
+                );
+                
+                const transactionData = processOCRText(text);
+                updateUI(transactionData);
+            } catch (error) {
+                console.error('OCR Error:', error);
+                alert('Error processing receipt. Please try again.');
+            } finally {
+                toggleLoading(false);
+            }
+        });
+
+        function toggleLoading(state) {
+            isLoading = state;
+            loading.style.display = state ? 'block' : 'none';
+            uploadBtn.disabled = state;
+        }
+
+        function showImagePreview(url) {
+            imagePreview.style.display = 'block';
+            imagePreview.src = url;
+        }
+
+        function processOCRText(text) {
+            // Enhanced text processing
+            return {
+                store: extractStore(text),
+                amount: extractAmount(text),
+                category: categorizeTransaction(text)
+            };
+        }
+
+        function extractStore(text) {
+            const lines = text.split('\n');
+            return lines[0] || 'Unknown Store';
+        }
+
+        function extractAmount(text) {
+            const matches = text.match(/(Total|TOTAL|AMOUNT)\s*[\:\$]?\s*(\d+\.\d{2})/);
+            return matches ? parseFloat(matches[2]) : null;
+        }
+
+        function categorizeTransaction(text) {
+            const lowerText = text.toLowerCase();
+            if (/(grocery|food|restaurant)/.test(lowerText)) return 'Food';
+            if (/(utility|bill|electricity)/.test(lowerText)) return 'Bills';
+            if (/(clothing|store|shop)/.test(lowerText)) return 'Shopping';
+            return 'Other';
+        }
+
+        function updateUI(data) {
+            document.getElementById('storeName').textContent = data.store;
+            document.getElementById('transactionAmount').textContent = 
+                data.amount ? `$${data.amount.toFixed(2)}` : 'N/A';
+            document.getElementById('transactionCategory').textContent = data.category;
+        }
+    </script>
+    <script src="https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js"></script>
+</body>
+</html>
