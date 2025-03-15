@@ -227,7 +227,7 @@
         </div>
 
         <h1>AutoBudget 💸</h1>
-        <p>Smart Receipt Scanning & Expense Tracking</p>
+        <p>Smart Receipt and Transfer Analysis, Expense Tracking and Budgeting</p>
     </header>
 
     <main class="container">
@@ -300,8 +300,7 @@
             loginDropdown.classList.remove('show');
         });
 
-        // Original OCR Code
-        const Tesseract = window.Tesseract;
+        // Getting data
         let isLoading = false;
 
         const uploadBtn = document.getElementById('uploadBtn');
@@ -353,24 +352,6 @@
                 amount: extractAmount(text),
                 category: categorizeTransaction(text)
             };
-        }
-
-        function extractStore(text) {
-            const lines = text.split('\n');
-            return lines[0] || 'Unknown Store';
-        }
-
-        function extractAmount(text) {
-            const matches = text.match(/(Total|TOTAL|AMOUNT)\s*[\:\$]?\s*(\d+\.\d{2})/);
-            return matches ? parseFloat(matches[2]) : null;
-        }
-
-        function categorizeTransaction(text) {
-            const lowerText = text.toLowerCase();
-            if (/(grocery|food|restaurant)/.test(lowerText)) return 'Food';
-            if (/(utility|bill|electricity)/.test(lowerText)) return 'Bills';
-            if (/(clothing|store|shop)/.test(lowerText)) return 'Shopping';
-            return 'Other';
         }
 
         function updateUI(data) {

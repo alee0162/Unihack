@@ -16,6 +16,7 @@ details = text.split("\n")
 detailsS = []
 cents = 0
 description = ""
+date = ""
 for i in range(len(details)):
     detailsS = detailsS + details[i].split(" ")
 for i in range(len(detailsS)):
@@ -29,17 +30,59 @@ for i in range(len(detailsS)):
             else:
                 break
             j+=1
-    elif detailsS[i].find("2025") != -1:
-        j=1
-        while True:
-            if detailsS[i+j] != "":
-                description = description + detailsS[i+j] + " "
-            else:
-                break
-            j+=1
+    elif detailsS[i].find("Paid") != -1:
+        if detailsS[i+1] == "on":
+            for k in range(3,0,-1):
+                try:
+                    date = date + str(int(detailsS[i+1+k]))
+                    if k == 3:
+                        date = date + "-"
+                except:
+                    if k == 2:
+                        match detailsS[i+1+k]:
+                            case "Jan":
+                                date = date + "01-"
+                                continue
+                            case "Feb":
+                                date = date + "02-"
+                                continue
+                            case "Mar":
+                                date = date + "03-"
+                                continue
+                            case "Apr":
+                                date = date + "04-"
+                                continue
+                            case "May":
+                                date = date + "05-"
+                                continue
+                            case "Jun":
+                                date = date + "06-"
+                                continue
+                            case "Jul":
+                                date = date + "07-"
+                                continue
+                            case "Aug":
+                                date = date + "08-"
+                                continue
+                            case "Sep":
+                                date = date + "09-"
+                                continue
+                            case "Oct":
+                                date = date + "10-"
+                                continue
+                            case "Nov":
+                                date = date + "11-"
+                                continue
+                            case "Dec":
+                                date = date + "12-"
+                                continue
+                            case _:
+                                date = date + "01-"
+                                continue
 print(detailsS)
 print(description)
 print(cents)
+print(date)
 
 """
 # Example API endpoint to process data (e.g., add numbers)
