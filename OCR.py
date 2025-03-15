@@ -6,7 +6,7 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 app = Flask(__name__)
 
 # Load an image
-img = Image.open('images/image1.jpg')
+img = Image.open('images/image4.jpg')
 
 # Perform OCR
 text = pytesseract.image_to_string(img)
