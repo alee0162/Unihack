@@ -3,10 +3,13 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import json
 from flask import Flask, jsonify, request, send_from_directory
+import flask
 from werkzeug.utils import secure_filename
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+from flask_cors import CORS
 app = Flask(__name__)
+CORS(app)
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 def allowed_file(filename):
