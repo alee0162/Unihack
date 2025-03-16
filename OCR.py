@@ -1,12 +1,132 @@
 import pytesseract
 from PIL import Image
 import matplotlib.pyplot as plt
-from flask import Flask, jsonify, request
+import json
+from flask import Flask, jsonify, request, send_from_directory
+from werkzeug.utils import secure_filename
+
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 app = Flask(__name__)
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def analyse_image(image_to_analyse):
+    text = pytesseract.image_to_string(image_to_analyse)
+    print(text)
+
+    details = text.split("\n")
+    detailsS = []
+    cents = 0
+    description = ""
+    date = ""
+    for i in range(len(details)):
+        detailsS = detailsS + details[i].split(" ")
+    for i in range(len(detailsS)):
+        if detailsS[i].find("$") != -1:
+            cents = int(float(detailsS[i][1:])*100)
+        elif detailsS[i].find("Description") != -1:
+            j=1
+            while True:
+                if detailsS[i+j] != "":
+                    description = description + detailsS[i+j] + " "
+                else:
+                    break
+                j+=1
+        elif detailsS[i].find("Paid") != -1:
+            if detailsS[i+1] == "on":
+                for k in range(3,0,-1):
+                    try:
+                        date = date + str(int(detailsS[i+1+k]))
+                        if k == 3:
+                            date = date + "-"
+                    except:
+                        if k == 2:
+                            match detailsS[i+1+k]:
+                                case "Jan":
+                                    date = date + "01-"
+                                    continue
+                                case "Feb":
+                                    date = date + "02-"
+                                    continue
+                                case "Mar":
+                                    date = date + "03-"
+                                    continue
+                                case "Apr":
+                                    date = date + "04-"
+                                    continue
+                                case "May":
+                                    date = date + "05-"
+                                    continue
+                                case "Jun":
+                                    date = date + "06-"
+                                    continue
+                                case "Jul":
+                                    date = date + "07-"
+                                    continue
+                                case "Aug":
+                                    date = date + "08-"
+                                    continue
+                                case "Sep":
+                                    date = date + "09-"
+                                    continue
+                                case "Oct":
+                                    date = date + "10-"
+                                    continue
+                                case "Nov":
+                                    date = date + "11-"
+                                    continue
+                                case "Dec":
+                                    date = date + "12-"
+                                    continue
+                                case _:
+                                    date = date + "01-"
+                                    continue
+    return [date, description, cents]
+
+@app.route("/")
+def hello():
+    return "Hello, World!"
+if __name__ == "__main__":
+    app.run("localhost", 1000)
+
+@app.route('/analyse', methods=['POST'])
+def upload_image():
+    if 'image' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+
+    file = request.files['image']
+    
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        information = analyse_image(file)
+        with open("data.json", "r") as f:
+            data = json.load(f)
+            data.append({
+                    "date": information[1],
+                    "description": information[2],
+                    "cost": information[3]
+            })
+
+            return jsonify(data)
+
+        return jsonify({'message': 'File uploaded successfully', 'filename': filename}), 200
+    else:
+        return jsonify({'error': 'File type not allowed'}), 400
+
+"""
+UPLOAD_FOLDER = 'images'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
+
 
 # Load an image
-img = Image.open('images/image4.jpg')
+img = Image.open('images/image3.jpg')
 
 # Perform OCR
 text = pytesseract.image_to_string(img)
@@ -79,11 +199,7 @@ for i in range(len(detailsS)):
                             case _:
                                 date = date + "01-"
                                 continue
-print(detailsS)
-print(description)
-print(cents)
-print(date)
-
+"""
 """
 # Example API endpoint to process data (e.g., add numbers)
 @app.route('/api/analyse', methods=['POST'])
@@ -117,8 +233,6 @@ def get_user():
     }
     return jsonify(user_data)
 """
-
-
 """
 # Create a sample plot
 x = [1, 2, 3, 4, 5]
