@@ -2,7 +2,7 @@ import pytesseract
 from PIL import Image
 import matplotlib.pyplot as plt
 import json
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, render_template
 import flask
 from werkzeug.utils import secure_filename
 
@@ -17,7 +17,6 @@ def allowed_file(filename):
 
 def analyse_image(image_to_analyse):
     text = pytesseract.image_to_string(image_to_analyse)
-    print(text)
 
     details = text.split("\n")
     detailsS = []
@@ -89,10 +88,8 @@ def analyse_image(image_to_analyse):
     return [date, description, cents]
 
 @app.route("/")
-def hello():
-    return "Hello, World!"
-if __name__ == "__main__":
-    app.run("localhost", 1000)
+def index():
+    return render_template('index.html')
 
 @app.route('/analyse', methods=['POST'])
 def upload_image():
@@ -117,10 +114,12 @@ def upload_image():
 
             return jsonify(data)
 
-        return jsonify({'message': 'File uploaded successfully', 'filename': filename}), 200
+        return jsonify({'message': 'Data stored from', 'filename': filename}), 200
     else:
         return jsonify({'error': 'File type not allowed'}), 400
 
+if __name__ == "__main__":
+    app.run(debug = True)
 """
 UPLOAD_FOLDER = 'images'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
