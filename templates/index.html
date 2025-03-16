@@ -1,162 +1,161 @@
 {% extends 'base.html' %}
-<html lang="en">
+
 {% block head %}
 <title>AutoBudget - Smart Receipt Scanner</title>
 {% endblock %}
-<body>
-    <header class="header">
-        <!-- Profile Section -->
-        <div class="profile-container" id="profileContainer">
-            <div class="profile-icon" id="profileIcon">
-                👤
+{% block body %}
+<header class="header">
+    <!-- Profile Section -->
+    <div class="profile-container" id="profileContainer">
+        <div class="profile-icon" id="profileIcon">
+            👤
+        </div>
+        <div class="login-dropdown" id="loginDropdown">
+            <form class="login-form" id="loginForm">
+                <input type="text" class="login-input" placeholder="Username" required>
+                <input type="password" class="login-input" placeholder="Password" required>
+                <button type="submit" class="login-button">Login</button>
+            </form>
+            <div class="signup-text">
+                Don't have an account? <span class="signup-link" id="signupLink">Sign up</span>
             </div>
-            <div class="login-dropdown" id="loginDropdown">
-                <form class="login-form" id="loginForm">
-                    <input type="text" class="login-input" placeholder="Username" required>
-                    <input type="password" class="login-input" placeholder="Password" required>
-                    <button type="submit" class="login-button">Login</button>
-                </form>
-                <div class="signup-text">
-                    Don't have an account? <span class="signup-link" id="signupLink">Sign up</span>
+        </div>
+    </div>
+
+    <h1>AutoBudget 💸</h1>
+    <p>Smart Receipt and Transfer Analysis, Expense Tracking and Budgeting</p>
+</header>
+
+<main class="container">
+    <section class="upload-card">
+        <input type="file" id="fileInput" accept="image/*" hidden>
+        <button class="upload-btn" id="uploadBtn">
+            📸 Upload Receipt
+        </button>
+        <img id="imagePreview" alt="Receipt preview">
+        <div class="loading" id="loading">Processing...</div>
+    </section>
+
+    <section class="dashboard">
+        <div class="card">
+            <h3>Transaction Details</h3>
+            <div id="transactionDetails">
+                <div class="result-item">
+                    <span>Store:</span>
+                    <span id="storeName">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Amount:</span>
+                    <span id="transactionAmount">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Category:</span>
+                    <span id="transactionCategory" class="category-tag">-</span>
                 </div>
             </div>
         </div>
 
-        <h1>AutoBudget 💸</h1>
-        <p>Smart Receipt and Transfer Analysis, Expense Tracking and Budgeting</p>
-    </header>
-
-    <main class="container">
-        <section class="upload-card">
-            <input type="file" id="fileInput" accept="image/*" hidden>
-            <button class="upload-btn" id="uploadBtn">
-                📸 Upload Receipt
-            </button>
-            <img id="imagePreview" alt="Receipt preview">
-            <div class="loading" id="loading">Processing...</div>
-        </section>
-
-        <section class="dashboard">
-            <div class="card">
-                <h3>Transaction Details</h3>
-                <div id="transactionDetails">
-                    <div class="result-item">
-                        <span>Store:</span>
-                        <span id="storeName">-</span>
-                    </div>
-                    <div class="result-item">
-                        <span>Amount:</span>
-                        <span id="transactionAmount">-</span>
-                    </div>
-                    <div class="result-item">
-                        <span>Category:</span>
-                        <span id="transactionCategory" class="category-tag">-</span>
-                    </div>
-                </div>
+        <div class="card">
+            <h3>Budget Overview</h3>
+            <div id="chartContainer">
+                <p style="color: #666; text-align: center">
+                    Expense breakdown will appear here
+                </p>
             </div>
+        </div>
+    </section>
+</main>
 
-            <div class="card">
-                <h3>Budget Overview</h3>
-                <div id="chartContainer">
-                    <p style="color: #666; text-align: center">
-                        Expense breakdown will appear here
-                    </p>
-                </div>
-            </div>
-        </section>
-    </main>
+<script>
+    // Profile Login System
+    const profileIcon = document.getElementById('profileIcon');
+    const loginDropdown = document.getElementById('loginDropdown');
+    const signupLink = document.getElementById('signupLink');
+    const loginForm = document.getElementById('loginForm');
+    const profileContainer = document.getElementById('profileContainer');
 
-    <script>
-        // Profile Login System
-        const profileIcon = document.getElementById('profileIcon');
-        const loginDropdown = document.getElementById('loginDropdown');
-        const signupLink = document.getElementById('signupLink');
-        const loginForm = document.getElementById('loginForm');
-        const profileContainer = document.getElementById('profileContainer');
+    profileIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        loginDropdown.classList.toggle('show');
+    });
 
-        profileIcon.addEventListener('click', (e) => {
-            e.stopPropagation();
-            loginDropdown.classList.toggle('show');
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!profileContainer.contains(e.target)) {
-                loginDropdown.classList.remove('show');
-            }
-        });
-
-        signupLink.addEventListener('click', () => {
-            loginForm.querySelector('button').textContent = 'Sign Up';
-            loginDropdown.classList.add('show');
-        });
-
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            alert('Login functionality would go here');
+    document.addEventListener('click', (e) => {
+        if (!profileContainer.contains(e.target)) {
             loginDropdown.classList.remove('show');
-        });
-
-        // Getting data
-        let isLoading = false;
-
-        const uploadBtn = document.getElementById('uploadBtn');
-        const fileInput = document.getElementById('fileInput');
-        const imagePreview = document.getElementById('imagePreview');
-        const loading = document.getElementById('loading');
-
-        uploadBtn.addEventListener('click', () => fileInput.click());
-        
-        fileInput.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            try {
-                toggleLoading(true);
-                const imageUrl = URL.createObjectURL(file);
-                showImagePreview(imageUrl);
-                
-                const { data: { text } } = await Tesseract.recognize(
-                    imageUrl,
-                    'eng',
-                    { logger: m => console.log(m) }
-                );
-                
-                const transactionData = processOCRText(text);
-                updateUI(transactionData);
-            } catch (error) {
-                console.error('OCR Error:', error);
-                alert('Error processing receipt. Please try again.');
-            } finally {
-                toggleLoading(false);
-            }
-        });
-
-        function toggleLoading(state) {
-            isLoading = state;
-            loading.style.display = state ? 'block' : 'none';
-            uploadBtn.disabled = state;
         }
+    });
 
-        function showImagePreview(url) {
-            imagePreview.style.display = 'block';
-            imagePreview.src = url;
-        }
+    signupLink.addEventListener('click', () => {
+        loginForm.querySelector('button').textContent = 'Sign Up';
+        loginDropdown.classList.add('show');
+    });
 
-        function processOCRText(text) {
-            return {
-                store: extractStore(text),
-                amount: extractAmount(text),
-                category: categorizeTransaction(text)
-            };
-        }
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        alert('Login functionality would go here');
+        loginDropdown.classList.remove('show');
+    });
 
-        function updateUI(data) {
-            document.getElementById('storeName').textContent = data.store;
-            document.getElementById('transactionAmount').textContent = 
-                data.amount ? `$${data.amount.toFixed(2)}` : 'N/A';
-            document.getElementById('transactionCategory').textContent = data.category;
+    // Getting data
+    let isLoading = false;
+
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('fileInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const loading = document.getElementById('loading');
+
+    uploadBtn.addEventListener('click', () => fileInput.click());
+    
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            toggleLoading(true);
+            const imageUrl = URL.createObjectURL(file);
+            showImagePreview(imageUrl);
+            
+            const { data: { text } } = await Tesseract.recognize(
+                imageUrl,
+                'eng',
+                { logger: m => console.log(m) }
+            );
+            
+            const transactionData = processOCRText(text);
+            updateUI(transactionData);
+        } catch (error) {
+            console.error('OCR Error:', error);
+            alert('Error processing receipt. Please try again.');
+        } finally {
+            toggleLoading(false);
         }
-    </script>
-    <script src="https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js"></script>
-</body>
-</html>
+    });
+
+    function toggleLoading(state) {
+        isLoading = state;
+        loading.style.display = state ? 'block' : 'none';
+        uploadBtn.disabled = state;
+    }
+
+    function showImagePreview(url) {
+        imagePreview.style.display = 'block';
+        imagePreview.src = url;
+    }
+
+    function processOCRText(text) {
+        return {
+            store: extractStore(text),
+            amount: extractAmount(text),
+            category: categorizeTransaction(text)
+        };
+    }
+
+    function updateUI(data) {
+        document.getElementById('storeName').textContent = data.store;
+        document.getElementById('transactionAmount').textContent = 
+            data.amount ? `$${data.amount.toFixed(2)}` : 'N/A';
+        document.getElementById('transactionCategory').textContent = data.category;
+    }
+</script>
+<script src="https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js"></script>
+{% endblock %}
